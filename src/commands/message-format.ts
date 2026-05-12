@@ -246,6 +246,11 @@ export function formatMessageCliText(result: MessageActionRunResult): string[] {
   const width = getTerminalTableWidth();
   const opts: FormatOpts = { width };
 
+  // Check dryRun flag first — handledBy is never "dry-run" on the send/poll path.
+  if (result.dryRun) {
+    return [muted(`[dry-run] would ${result.action} via ${result.channel}`)];
+  }
+
   if (result.handledBy === "dry-run") {
     return [muted(`[dry-run] would run ${result.action} via ${result.channel}`)];
   }
