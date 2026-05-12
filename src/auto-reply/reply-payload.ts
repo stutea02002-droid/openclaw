@@ -46,6 +46,9 @@ export type ReplyPayload = {
   isCompactionNotice?: boolean;
   /** Channel-specific payload data (per-channel envelope). */
   channelData?: Record<string, unknown>;
+  /** When true, the command handler has already delivered its own response
+   *  and the channel adapter should suppress the default fallback message. */
+  suppressReply?: boolean;
 };
 
 export type ReplyPayloadMetadata = {

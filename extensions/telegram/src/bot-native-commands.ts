@@ -322,6 +322,9 @@ function normalizeTelegramNativeReplyPayload(
 }
 
 function hasRenderableTelegramNativeReplyPayload(result: TelegramNativeReplyPayload): boolean {
+  if (result.suppressReply === true) {
+    return true;
+  }
   return resolveSendableOutboundReplyParts(result).hasContent;
 }
 
@@ -1376,6 +1379,16 @@ export const registerTelegramNativeCommands = ({
             payload: result,
           })
         ) {
+          await cleanupTelegramProgressPlaceholder({
+            bot,
+            chatId,
+            progressMessageId,
+            runtime,
+          });
+          return;
+        }
+
+        if (result.suppressReply === true) {
           await cleanupTelegramProgressPlaceholder({
             bot,
             chatId,
