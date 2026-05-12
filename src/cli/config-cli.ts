@@ -154,6 +154,11 @@ function normalizeConfigMutationExplicitSetPath(path: PathSegment[]): PathSegmen
 
 const GATEWAY_AUTH_MODE_PATH: PathSegment[] = ["gateway", "auth", "mode"];
 const SECRET_PROVIDER_PATH_PREFIX: PathSegment[] = ["secrets", "providers"];
+const AUTO_MANAGED_META_PATHS: ReadonlySet<string> = new Set([
+  "meta.lastTouchedVersion",
+  "meta.lastTouchedAt",
+]);
+
 const PLUGIN_INSTALL_RECORD_PATH_PREFIX: PathSegment[] = ["plugins", "installs"];
 const CONFIG_SET_EXAMPLE_VALUE = formatCliCommand(
   "openclaw config set gateway.port 19001 --strict-json",
@@ -1591,6 +1596,21 @@ async function runConfigOperations(params: {
   }
   if (policyIssueLines.length > 0) {
     throw new Error(formatUnsupportedSecretRefPolicyFailureMessage(policyIssueLines));
+  }
+
+  // Warn about auto-managed meta.* paths that will be overwritten by stampConfigVersion.
+  for (const operation of operations) {
+    if (operation.mutation === "delete") {
+      continue;
+    }
+    const dotPath = toDotPath(operation.requestedPath);
+    if (AUTO_MANAGED_META_PATHS.has(dotPath)) {
+      runtime.log(
+        danger(
+          `Warning: ${dotPath} is auto-managed by OpenClaw. Your value will be overwritten on the next config write. This path is documented as "${operation.requestedPath.at(-1) === "lastTouchedVersion" ? "Auto-set when OpenClaw writes the config." : "ISO timestamp of the last config write (auto-set)."}"`,
+        ),
+      );
+    }
   }
 
   await replaceConfigFile({
